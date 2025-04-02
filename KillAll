@@ -1,0 +1,93 @@
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+local backpack = localPlayer.Backpack
+
+local function equipKnife()
+    local knife = backpack:FindFirstChild("Knife")
+    if not knife then
+        return
+    end
+    knife.Parent = character
+end
+
+localPlayer.CharacterAdded:Connect(function(newCharacter)
+    character = newCharacter
+    equipKnife()
+end)
+
+equipKnife()
+
+wait(0.1)
+local workspace = game:GetService("Workspace")
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+
+local function findKnifeTool()
+    for _, player in ipairs(players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChildOfClass("Tool") then
+            local tool = player.Character:FindFirstChildOfClass("Tool")
+            if tool.Name == "Knife" then
+                return tool
+            end
+        end
+    end
+    return nil
+end
+
+local function performAction()
+    local args = { [1] = "Down" }
+    game:GetService("Players").LocalPlayer.Character.Knife.Stab:FireServer(unpack(args))
+end
+
+local function teleportPlayers()
+    local knifeTool = findKnifeTool()
+    if not knifeTool then
+        return
+    end
+
+    local originalPositions = {}
+    for _, player in ipairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character.PrimaryPart then
+            originalPositions[player] = player.Character.PrimaryPart.Position
+        end
+    end
+
+    local teleportTime = 2
+    local interval = 0.1
+    local numIntervals = teleportTime / interval
+
+    for _ = 1, numIntervals do
+        for _, player in ipairs(players:GetPlayers()) do
+            if player ~= localPlayer and player.Character and player.Character.PrimaryPart then
+                player.Character:SetPrimaryPartCFrame(knifeTool.Handle.CFrame)
+            end
+        end
+        wait(interval)
+    end
+
+    for player, position in pairs(originalPositions) do
+        if player.Character and player.Character.PrimaryPart then
+            player.Character:SetPrimaryPartCFrame(CFrame.new(position))
+        end
+    end
+end
+
+local function repeatAction()
+    local startTime = tick()
+    local actionTime = 2
+    local interval = 0.1
+
+    while tick() - startTime < actionTime do
+        performAction()
+        wait(interval)
+    end
+end
+
+coroutine.wrap(function()
+    teleportPlayers()
+end)()
+
+coroutine.wrap(function()
+    repeatAction()
+end)()
