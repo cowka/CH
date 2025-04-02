@@ -1,0 +1,77 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+local startPosition = character.HumanoidRootPart.Position
+
+local function teleportToStartPosition()
+    character.HumanoidRootPart.CFrame = CFrame.new(startPosition)
+end
+
+local function findPlayerWithKnife()
+    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            local backpack = otherPlayer.Backpack
+            for _, item in pairs(backpack:GetChildren()) do
+                if item:IsA("Tool") and item.Name == "Knife" then
+                    return otherPlayer
+                end
+            end
+
+            local otherCharacter = otherPlayer.Character
+            if otherCharacter then
+                for _, item in pairs(otherCharacter:GetChildren()) do
+                    if item:IsA("Tool") and item.Name == "Knife" then
+                        return otherPlayer
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function teleportBehindPlayer(targetPlayer)
+    local targetCharacter = targetPlayer.Character
+    if not targetCharacter then return end
+
+    local targetHumanoidRootPart = targetCharacter:FindFirstChild("HumanoidRootPart")
+    if not targetHumanoidRootPart then return end
+
+    local targetPosition = targetHumanoidRootPart.Position
+    local behindPosition = targetPosition + (targetHumanoidRootPart.CFrame.LookVector * -3)
+
+    character.HumanoidRootPart.CFrame = CFrame.new(behindPosition, targetPosition)
+end
+
+local function executeRemoteFunctionWithNewVector(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+
+    local targetHumanoidRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not targetHumanoidRootPart then return end
+
+    local targetPosition = targetHumanoidRootPart.Position
+
+    local args = {
+        [1] = 1,
+        [2] = targetPosition,
+        [3] = "AH2"
+    }
+
+    game:GetService("Players").LocalPlayer.Character.Gun.KnifeLocal.CreateBeam.RemoteFunction:InvokeServer(unpack(args))
+end
+
+local function main()
+    spawn(function()
+        wait(0.3)
+        teleportToStartPosition()
+    end)
+
+    local targetPlayer = findPlayerWithKnife()
+    if targetPlayer then
+        teleportBehindPlayer(targetPlayer)
+        wait(0.2)
+        executeRemoteFunctionWithNewVector(targetPlayer)
+    end
+end
+
+main()
