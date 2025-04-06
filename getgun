@@ -3,11 +3,8 @@ local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 
 local function MoveGunToPlayerModel()
-    local localCharacter = LP.Character
-    if not localCharacter then
-        return
-    end
-
+    local localCharacter = LP.Character or LP.CharacterAdded:Wait()
+    
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LP then
             local backpack = player.Backpack
